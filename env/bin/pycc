@@ -1,0 +1,3 @@
+#!/home/sadegh/PycharmProjects/bcd_server/env/bin/python
+from numba.pycc import main
+main()

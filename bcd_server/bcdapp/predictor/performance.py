@@ -1,9 +1,9 @@
 import re
 import os
 import prediction
-import config
+import predictor_configs
 
-load_path = config.RAW_DATASET_PATH
+load_path = predictor_configs.RAW_DATASET_PATH
 regex = re.compile(r'^[0-9]')
 directory_list = [i for i in os.listdir(load_path) if regex.search(i)]
 
@@ -18,7 +18,7 @@ for directory in directory_list:
         pred = prediction.predict(file_name)
 
         all_records += 1
-        if directory == config.CRYING_BABY_RAW_DIR_NAME:
+        if directory == predictor_configs.CRYING_BABY_RAW_DIR_NAME:
             if pred == 1:
                 correct_predictions += 1
         else:

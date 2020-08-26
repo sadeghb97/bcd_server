@@ -4,7 +4,7 @@ import librosa
 import numpy as np
 import json
 import os
-import config
+from .predictor_configs import CRYING_BABY_LABEL
 
 
 class FeatureEngineer:
@@ -95,7 +95,7 @@ class BabyCryPredictor:
 
     @staticmethod
     def _is_baby_cry(string):
-        match = re.search(config.CRYING_BABY_LABEL, string)
+        match = re.search(CRYING_BABY_LABEL, string)
         if match:
             return 1
         else:

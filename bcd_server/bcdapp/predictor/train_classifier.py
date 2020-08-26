@@ -9,7 +9,7 @@ import os
 import pickle
 import sklearn2pmml
 from sklearn2pmml import PMMLPipeline
-import config
+import predictor_configs
 
 
 class TrainClassifier:
@@ -110,8 +110,8 @@ class TrainClassifier:
 
 
 # TRAIN MODEL
-X = np.load(config.DERIVED_DATASET_PATH)
-Y = np.load(config.DERIVED_LABELS_PATH)
+X = np.load(predictor_configs.DERIVED_DATASET_PATH)
+Y = np.load(predictor_configs.DERIVED_LABELS_PATH)
 
 train_classifier = TrainClassifier(
     X, Y,
