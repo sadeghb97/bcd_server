@@ -15,7 +15,7 @@ for directory in directory_list:
 
     for audio_file in file_list:
         file_name = os.path.join(load_path, directory, audio_file)
-        pred = prediction.predict(file_name)
+        pred = prediction.predict(file_name)['overall']['prediction']
 
         all_records += 1
         if directory == predictor_configs.CRYING_BABY_RAW_DIR_NAME:

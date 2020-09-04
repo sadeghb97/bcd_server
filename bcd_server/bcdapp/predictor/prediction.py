@@ -63,26 +63,37 @@ class Reader:
 
 
 class Prediction:
-    def __init__(self, accuracy, prediction):
-        self.accuracy = accuracy
+    def __init__(self, prediction, accuracy):
         self.prediction = prediction
+        self.accuracy = accuracy
 
 
 class MajorityVoter:
     def __init__(self, prediction_list):
         self.predictions = prediction_list
+        self.result = None
+        self.positive_weight = None
+        self.sum_weights = None
 
     def vote(self):
-        pr_sum = 0
-        abs_sum = 0
+        self.positive_weight = 0
+        self.sum_weights = 0
         for pred in self.predictions:
-            pr_sum += pred.prediction
-            abs_sum += pred.accuracy
+            self.positive_weight += pred.prediction * pred.accuracy
+            self.sum_weights += pred.accuracy
 
-        if pr_sum > abs_sum/2.0:
-            return 1
+        if self.positive_weight > self.sum_weights/2.0:
+            self.result = 1
         else:
-            return 0
+            self.result = 0
+
+        return self
+
+    def get_dictionary(self):
+        return {
+            'prediction': self.result,
+            'cry': self.positive_weight / self.sum_weights
+        }
 
 
 class BabyCryPredictor:
@@ -102,14 +113,16 @@ class BabyCryPredictor:
             return 0
 
 
-final_models = [
-    {'model_path': "svc_model.pkl", 'perf_path': "svc_performance.json"},
-    {'model_path': "linsvc_model.pkl", 'perf_path': "linsvc_performance.json"},
-    {'model_path': "mlp_model.pkl", 'perf_path': "mlp_performance.json"}
-]
-
-
 def predict(file_name):
+    final_models = [
+        {'model_path': "svc_model.pkl", 'perf_path': "svc_performance.json",
+         'preds': list(), 'name': "svc", 'voter': None},
+        {'model_path': "linsvc_model.pkl", 'perf_path': "linsvc_performance.json",
+         'preds': list(), 'name': "linsvc", 'voter': None},
+        {'model_path': "mlp_model.pkl", 'perf_path': "mlp_performance.json",
+         'preds': list(), 'name': "mlp", 'voter': None}
+    ]
+
     file_reader = Reader(file_name)
     play_list = file_reader.read_audio_file()
 
@@ -136,12 +149,19 @@ def predict(file_name):
         predictor = BabyCryPredictor(model)
         for signal in play_list_processed:
             tmp = predictor.classify(signal)
-            prediction = Prediction(perf['f1'], tmp)
+            prediction = Prediction(tmp, perf['f1'])
             predictions.append(prediction)
+            final_model['preds'].append(prediction)
 
-    # MAJORITY VOTE
+        final_model['voter'] = MajorityVoter(final_model['preds'])
+        final_model['voter'].vote()
+
     majority_voter = MajorityVoter(predictions)
-    majority_vote = majority_voter.vote()
-    return majority_vote
+    majority_voter.vote()
 
-
+    return {
+        "overall": majority_voter.get_dictionary(),
+        final_models[0]['name']: final_models[0]['voter'].get_dictionary(),
+        final_models[1]['name']: final_models[1]['voter'].get_dictionary(),
+        final_models[2]['name']: final_models[2]['voter'].get_dictionary(),
+    }
