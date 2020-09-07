@@ -16,6 +16,14 @@ def predict(request):
         if ser.is_valid():
             ser.save()
             sound_abs_path = os.path.normpath(str(settings.BASE_DIR) + "/.." + ser.data['sound'])
+            start_time = 0
+            end_time = 0;
+
+            if 'start_time' in request.data:
+                start_time = request.data['start_time']
+
+            if 'end_time' in request.data:
+                end_time = request.data['end_time']
 
             if 'type' in request.data:
                 if request.data['type'] == 'cry':
@@ -31,8 +39,13 @@ def predict(request):
                     copy(sound_abs_path, dest_path)
 
             pred_dict = prediction.predict(sound_abs_path)
+
             return Response(
-                {'result': pred_dict}
+                {
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'result': pred_dict
+                }
                 , status=status.HTTP_200_OK
             )
         return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -115,7 +115,7 @@ Y = np.load(predictor_configs.DERIVED_LABELS_PATH)
 
 train_classifier = TrainClassifier(
     X, Y,
-    TrainClassifier.LINEAR_SVC_CLASSIFIER
+    TrainClassifier.SVC_CLASSIFIER
 )
 train_classifier.train()
 train_classifier.save()

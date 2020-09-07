@@ -4,6 +4,7 @@ import librosa
 import numpy as np
 import json
 import os
+import math
 from .predictor_configs import CRYING_BABY_LABEL
 
 
@@ -54,8 +55,16 @@ class Reader:
 
     def read_audio_file(self):
         play_list = list()
+        header_duration = librosa.get_duration(filename=self.file_name)
 
-        for offset in range(5):
+        if header_duration < 5:
+            audio_data, _ = librosa.load(self.file_name, sr=44100, mono=True)
+            play_list.append(audio_data)
+            return play_list
+
+        splits_number = math.ceil(header_duration - 4)
+
+        for offset in range(splits_number):
             audio_data, _ = librosa.load(self.file_name, sr=44100, mono=True, offset=offset, duration=5.0)
             play_list.append(audio_data)
 
@@ -116,11 +125,13 @@ class BabyCryPredictor:
 def predict(file_name):
     final_models = [
         {'model_path': "svc_model.pkl", 'perf_path': "svc_performance.json",
-         'preds': list(), 'name': "svc", 'voter': None},
+         'preds': [], 'name': "svc", 'voter': {}},
+        {'model_path': "svc_v1_model.pkl", 'perf_path': "svc_v1_performance.json",
+         'preds': [], 'name': "svc_v1", 'voter': {}},
         {'model_path': "linsvc_model.pkl", 'perf_path': "linsvc_performance.json",
-         'preds': list(), 'name': "linsvc", 'voter': None},
+         'preds': [], 'name': "linsvc", 'voter': {}},
         {'model_path': "mlp_model.pkl", 'perf_path': "mlp_performance.json",
-         'preds': list(), 'name': "mlp", 'voter': None}
+         'preds': [], 'name': "mlp", 'voter': {}}
     ]
 
     file_reader = Reader(file_name)
@@ -131,7 +142,8 @@ def predict(file_name):
     play_list_processed = list()
     for signal in play_list:
         tmp = engineer.feature_engineer(signal)
-        play_list_processed.append(tmp)
+        proc_signal = {"data": tmp, "preds": list()}
+        play_list_processed.append(proc_signal)
 
     # MAKE PREDICTION
     predictions = list()
@@ -147,21 +159,36 @@ def predict(file_name):
             perf = json.load(fp)
 
         predictor = BabyCryPredictor(model)
+        sig_num = 0
         for signal in play_list_processed:
-            tmp = predictor.classify(signal)
+            tmp = predictor.classify(signal['data'])
             prediction = Prediction(tmp, perf['f1'])
             predictions.append(prediction)
-            final_model['preds'].append(prediction)
+            signal['preds'].append(prediction)
 
-        final_model['voter'] = MajorityVoter(final_model['preds'])
-        final_model['voter'].vote()
+            final_model['preds'].append(prediction)
+            final_model['voter'][sig_num] = prediction.prediction
+
+            sig_num += 1
+
+        fm_voter = MajorityVoter(final_model['preds'])
+        fm_voter.vote()
+        final_model['voter']['ovr'] = fm_voter.get_dictionary()
 
     majority_voter = MajorityVoter(predictions)
     majority_voter.vote()
 
+    signals_result = []
+    for signal in play_list_processed:
+        voter = MajorityVoter(signal['preds'])
+        voter.vote()
+        signals_result.append(voter.get_dictionary())
+
     return {
         "overall": majority_voter.get_dictionary(),
-        final_models[0]['name']: final_models[0]['voter'].get_dictionary(),
-        final_models[1]['name']: final_models[1]['voter'].get_dictionary(),
-        final_models[2]['name']: final_models[2]['voter'].get_dictionary(),
+        "signals": signals_result,
+        final_models[0]['name']: final_models[0]['voter'],
+        final_models[1]['name']: final_models[1]['voter'],
+        final_models[2]['name']: final_models[2]['voter'],
+        final_models[3]['name']: final_models[3]['voter'],
     }
