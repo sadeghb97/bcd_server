@@ -72,9 +72,10 @@ class Reader:
 
 
 class Prediction:
-    def __init__(self, prediction, accuracy):
+    def __init__(self, prediction, accuracy, confidence):
         self.prediction = prediction
         self.accuracy = accuracy
+        self.confidence = confidence
 
 
 class MajorityVoter:
@@ -88,7 +89,7 @@ class MajorityVoter:
         self.positive_weight = 0
         self.sum_weights = 0
         for pred in self.predictions:
-            self.positive_weight += pred.prediction * pred.accuracy
+            self.positive_weight += pred.prediction * pred.accuracy * pred.confidence
             self.sum_weights += pred.accuracy
 
         if self.positive_weight > self.sum_weights/2.0:
@@ -110,8 +111,15 @@ class BabyCryPredictor:
         self.model = model
 
     def classify(self, new_signal):
+        confidence = 1
         category = self.model.predict(new_signal)
-        return self._is_baby_cry(category[0])
+
+        try:
+            confidence = self.model.predict_proba(new_signal)[0][0]
+        except AttributeError as error:
+            pass
+
+        return self._is_baby_cry(category[0]), confidence
 
     @staticmethod
     def _is_baby_cry(string):
@@ -161,13 +169,16 @@ def predict(file_name):
         predictor = BabyCryPredictor(model)
         sig_num = 0
         for signal in play_list_processed:
-            tmp = predictor.classify(signal['data'])
-            prediction = Prediction(tmp, perf['f1'])
+            tmp, confidence = predictor.classify(signal['data'])
+            prediction = Prediction(tmp, perf['f1'], confidence)
             predictions.append(prediction)
             signal['preds'].append(prediction)
 
             final_model['preds'].append(prediction)
-            final_model['voter'][sig_num] = prediction.prediction
+            final_model['voter'][sig_num] = {
+                'prediction': prediction.prediction,
+                'confidence': prediction.confidence
+            }
 
             sig_num += 1
 
