@@ -111,15 +111,16 @@ class BabyCryPredictor:
         self.model = model
 
     def classify(self, new_signal):
-        confidence = 1
         category = self.model.predict(new_signal)
+        prediction = self._is_baby_cry(category[0])
+        confidence = prediction
 
         try:
             confidence = self.model.predict_proba(new_signal)[0][0]
         except AttributeError as error:
             pass
 
-        return self._is_baby_cry(category[0]), confidence
+        return prediction, confidence
 
     @staticmethod
     def _is_baby_cry(string):
@@ -167,7 +168,7 @@ def predict(file_name):
             perf = json.load(fp)
 
         predictor = BabyCryPredictor(model)
-        sig_num = 0
+        final_model['voter']['signals'] = []
         for signal in play_list_processed:
             tmp, confidence = predictor.classify(signal['data'])
             prediction = Prediction(tmp, perf['f1'], confidence)
@@ -175,12 +176,10 @@ def predict(file_name):
             signal['preds'].append(prediction)
 
             final_model['preds'].append(prediction)
-            final_model['voter'][sig_num] = {
+            final_model['voter']['signals'].append({
                 'prediction': prediction.prediction,
                 'confidence': prediction.confidence
-            }
-
-            sig_num += 1
+            })
 
         fm_voter = MajorityVoter(final_model['preds'])
         fm_voter.vote()
