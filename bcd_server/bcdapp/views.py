@@ -39,6 +39,7 @@ def predict(request):
                     copy(sound_abs_path, dest_path)
 
             pred_dict = prediction.predict(sound_abs_path)
+            os.remove(sound_abs_path)
 
             return Response(
                 {
