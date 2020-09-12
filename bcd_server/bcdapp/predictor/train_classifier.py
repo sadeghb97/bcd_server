@@ -9,7 +9,9 @@ import os
 import pickle
 import sklearn2pmml
 from sklearn2pmml import PMMLPipeline
-import predictor_configs
+
+DERIVED_DATASET_PATH = '/home/sadegh/Desktop/final_project/output/dataset/dataset.npy'
+DERIVED_LABELS_PATH = '/home/sadegh/Desktop/final_project/output/dataset/labels.npy'
 
 
 class TrainClassifier:
@@ -110,8 +112,8 @@ class TrainClassifier:
 
 
 # TRAIN MODEL
-X = np.load(predictor_configs.DERIVED_DATASET_PATH)
-Y = np.load(predictor_configs.DERIVED_LABELS_PATH)
+X = np.load(DERIVED_DATASET_PATH)
+Y = np.load(DERIVED_LABELS_PATH)
 
 train_classifier = TrainClassifier(
     X, Y,

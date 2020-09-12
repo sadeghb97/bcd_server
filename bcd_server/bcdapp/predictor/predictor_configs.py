@@ -1,5 +1,0 @@
-RAW_DATASET_PATH = '/home/sadegh/Desktop/final_project/baby_cry_detection/data/'
-CRYING_BABY_RAW_DIR_NAME = '301 - Crying baby'
-CRYING_BABY_LABEL = 'Crying baby'
-DERIVED_DATASET_PATH = '/home/sadegh/Desktop/final_project/output/dataset/dataset.npy'
-DERIVED_LABELS_PATH = '/home/sadegh/Desktop/final_project/output/dataset/labels.npy'

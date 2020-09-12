@@ -5,7 +5,8 @@ import numpy as np
 import json
 import os
 import math
-from .predictor_configs import CRYING_BABY_LABEL
+
+CRYING_BABY_LABEL = 'Crying baby'
 
 
 class FeatureEngineer:
